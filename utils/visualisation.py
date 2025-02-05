@@ -202,7 +202,7 @@ def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=Fal
 
     for axis in axes:        
         # Arrowhead slightly outside the unit cell
-        arrow_start = origin
+        arrow_start = axis["start"]
         arrow_end = axis["end"]
         viewer.addArrow({"start": {"x": arrow_start[0], "y": arrow_start[1], "z": arrow_start[2]},
                          "end": {"x": arrow_end[0], "y": arrow_end[1], "z": arrow_end[2]},
