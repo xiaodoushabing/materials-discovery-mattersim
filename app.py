@@ -1,5 +1,9 @@
 import streamlit as st
-from utils.app_helpers import *
+from utils.app_setup_structure import *
+from utils.app_relax import *
+from utils.app_results import *
+from utils.app_sidebar import *
+from utils.app_md import *
                    
 # %%
 def main():
@@ -9,8 +13,8 @@ def main():
     # Get model configuration
     model, device = setup_configuration_sidebar()
     st.sidebar.divider()
-    optimizer, steps, filter, constrain_symmetry, fmax = setup_relaxation_sidebar()
-    
+    optimizer, steps, filter, constrain_symmetry, fmax, pressure, unit = setup_relaxation_sidebar()
+
     builder = get_builder()
     
     # Get structure inputs
@@ -44,28 +48,36 @@ def main():
     # Relax structure when requested
     st.divider()
     if st.button("Relax Structure"):
-        perform_relaxation(basis_positions, structure, optimizer, steps, filter, constrain_symmetry, fmax)
+        if unit == "eV/A^3" and pressure >= 1:
+            st.warning(f"""
+                       Check input pressure: {pressure} {unit}. \n
+                       1 eV/A^3 is already 160 GPa.""",
+                        icon = "⚠️")
+    
+        perform_relaxation(basis_positions, structure, optimizer, steps, filter, constrain_symmetry, fmax, pressure)
 
         # Display results
         st.header("Structure Relaxation Results")
         display_results(structure, atoms)
         render_structure(structure, repeat_unit=repeat_unit)
 
-    if builder == "Atoms Builder":
-        st.divider()
-        st.subheader("Molecular Dynamics (MD) simulation")
-        st.caption("""Note: The simulation is performed on the 'latest' structure.
-                   If relaxation has been done, the MD simulation will run on the relaxed structure; otherwise, it will run on the initial structure.""")
+    # MD simulation
+    st.divider()
+    st.subheader("Molecular Dynamics (MD) simulation")
+    st.caption("""Note: The simulation is performed on the 'latest' structure.
+                If relaxation has been done, the MD simulation will run on the relaxed structure; otherwise, it will run on the initial structure.""")
 
-        ensemble, temperature, timestep, taut, n_steps = get_md()
-        if st.checkbox("Start MD simulation", value=False):
-            with st.spinner("Running MD simulation..."):
-                md = run_md(structure, ensemble, temperature, timestep, taut, n_steps)
-                # Display results
-                st.header("MD Simulation Results")
-                display_results(md.atoms, atoms)
-                render_structure(md.atoms, repeat_unit=repeat_unit)
-
+    ensemble, temperature, timestep, taut, n_steps, temp_unit = get_md()
+    if st.button("Start MD simulation"):
+        if (temp_unit == "K" and temperature <= 0) | (temp_unit == "deg" and temperature <= -273.15):
+            st.warning("Temperature cannot be exactly at or below absolute zero.", icon = "⚠️")
+            st.stop()
+        with st.spinner("Running MD simulation..."):
+            md = run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit)
+            # Display results
+            st.header("MD Simulation Results")
+            display_results(md.atoms, atoms)
+            render_structure(md.atoms, repeat_unit=repeat_unit)
 
 if __name__ == "__main__":
     main()
