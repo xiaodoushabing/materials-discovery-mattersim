@@ -7,7 +7,7 @@ def get_md():
     if "ensemble" not in st.session_state:
         st.session_state.ensemble = "NVT_NOSE_HOOVER"
     if "temperature" not in st.session_state:
-        st.session_state.temperature = 293.15
+        st.session_state.temperature = 300
     if "timestep" not in st.session_state:
         st.session_state.timestep = 1.0
     if "taut" not in st.session_state:
