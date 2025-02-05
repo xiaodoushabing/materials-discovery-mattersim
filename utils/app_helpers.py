@@ -302,43 +302,43 @@ def calc_energy(structure, atoms):
 
 # %%
 def perform_relaxation(basis_positions, structure, optimizer, steps, filter, constrain_symmetry, fmax):
-
+    
     """Perform structure relaxation"""
-    with st.spinner("Starting relaxation..."):
-        if basis_positions is None:
+    if basis_positions is None:
             st.warning("Basis positions is None." , icon="⚠️")
             return
-            
-    # Create relaxer
-    try:
-        relaxer = Relaxer(
-            optimizer=optimizer,
-            filter=filter,
-            constrain_symmetry=constrain_symmetry
-        )
-    except Exception as e:
-        st.error(f"Failed to initialize relaxer: {str(e)}", icon="🚨")
     
-    # Perform relaxation
-    try:
-        relaxed_structure = relaxer.relax(structure, steps=steps, fmax=fmax)
-        # Store the relaxed structure in session_state to persist it across re-runs
-        if relaxed_structure:
-            st.session_state.relaxed_structure = relaxed_structure
-            st.success(f"""
-        Relaxation completed with:\n\n
-        Optimizer: {optimizer} \n
-        Relaxation steps: {steps}\n 
-        Filter: {filter}\n
-        Maximum force: {fmax}\n
-        Symmetry constrained: {constrain_symmetry}
-        """
-                    , icon="✅")
-            return relaxed_structure
-    
-    except Exception as e:
-        st.error(f"Relaxation failed: {str(e)}", icon="🚨")
-        st.stop()
+    with st.spinner("Starting relaxation..."):
+        # Create relaxer
+        try:
+            relaxer = Relaxer(
+                optimizer=optimizer,
+                filter=filter,
+                constrain_symmetry=constrain_symmetry
+            )
+        except Exception as e:
+            st.error(f"Failed to initialize relaxer: {str(e)}", icon="🚨")
+        
+        # Perform relaxation
+        try:
+            relaxed_structure = relaxer.relax(structure, steps=steps, fmax=fmax)
+            # Store the relaxed structure in session_state to persist it across re-runs
+            if relaxed_structure:
+                st.session_state.relaxed_structure = relaxed_structure
+                st.success(f"""
+            Relaxation completed with:\n\n
+            Optimizer: {optimizer} \n
+            Relaxation steps: {steps}\n 
+            Filter: {filter}\n
+            Maximum force: {fmax}\n
+            Symmetry constrained: {constrain_symmetry}
+            """
+                        , icon="✅")
+                return relaxed_structure
+        
+        except Exception as e:
+            st.error(f"Relaxation failed: {str(e)}", icon="🚨")
+            st.stop()
 
 
 # %%
