@@ -77,6 +77,8 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+md_trajectory.traj
+md_simulation.log
 
 # IPython
 profile_default/
