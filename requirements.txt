@@ -11,3 +11,4 @@ rdkit==2024.9.4
 torch>=2.4.1
 streamlit==1.41.1
 seaborn==0.13.2
+py3Dmol==2.4.2
