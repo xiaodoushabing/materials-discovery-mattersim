@@ -4,26 +4,40 @@
 *[MatterSim](https://github.com/microsoft/mattersim/tree/main?tab=readme-ov-file#----) is a deep learning atomistic model across elements, temperatures and pressures.*
 </div>
 
-## 1. Using MatterSim
-To run MatterSim, either create a clean conda environment as recommended or use a Docker container for better reproducibility.
-You can set up a Docker container using NVIDIA’s official PyTorch image:
-```bash
-docker pull nvcr.io/nvidia/pytorch:24.12-py3
-docker run --gpus all -it --rm nvcr.io/nvidia/pytorch:24.12-py3
-```
-1. Prerequisite
-   - `Python 3.12x`
-   - While the MatterSim authors recommend `Python 3.9`, this project is optimized for `Python 3.12.x`.
-2. Clone the repository:
+## 1. Installation
+
+#### Prerequisite
+- `Python 3.12x`
+- While the MatterSim authors recommend `Python 3.9`, this project is optimized for `Python 3.12.x`.
+
+#### Install from PyPI
+To run MatterSim, the authors recinnebd creating a clean conda environment to avoid potential package conflicts. You can create and activate a conda environment with the following commands:
    ```bash
-   git clone git@seagit.okla.seagate.com:adapt-ml/materials-discovery.git
+   # create the environment
+   conda create -n mattersim python=3.12
+
+   # activate the environment
+   conda activate mattersim
+```
+
+An alternative is to use a Docker container. You can set up a Docker container using NVIDIA’s official PyTorch image:
+   ```bash
+   # pull the docker image
+   docker pull nvcr.io/nvidia/pytorch:24.12-py3
+
+   # run the docker image
+   docker run --gpus all -it --rm nvcr.io/nvidia/pytorch:24.12-py3
+   ```
+1. Clone the repository:
+   ```bash
+   https://github.com/xiaodoushabing/materials-discovery-mattersim.git
    cd materials-discovery/matter/
    ```
-3. Install dependencies as necessary. Run:
+2. Install dependencies as necessary. Run the following command:
    ```bash
    pip install -r requirements.txt
    ```
-   or install dependencies manually.
+   or install dependencies manually. Note that downloading the dependencies may take some time:
    
 ## 2. Streamlit app (Structure Analysis with MatterSim)
 
@@ -51,7 +65,7 @@ This Streamlit application provides a user-friendly interface for analyzing atom
 
 #### Running the app
 
-In your terminal, run:
+In your terminal, run the following:
    ```bash
    streamlit run app.py
    ```
