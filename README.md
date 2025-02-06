@@ -41,7 +41,7 @@ An alternative is to use a Docker container. You can set up a Docker container u
    
 ## 2. Streamlit app (Structure Analysis with MatterSim)
 
-This Streamlit application provides a user-friendly interface for analyzing atomic and crystal structures using the MatterSim force field.  It allows users to define structures, perform structural relaxations, and run molecular dynamics (MD) simulations.
+This Streamlit application provides a user-friendly interface for analyzing atomic and crystal structures using the MatterSim force field. It allows users to define structures, perform structural relaxations, and run molecular dynamics (MD) simulations.
 
 #### Features
 
@@ -64,8 +64,11 @@ This Streamlit application provides a user-friendly interface for analyzing atom
 * **Visualisation:** Interactive 3D visualization of the structures.
 
 #### Running the app
+You can access the hosted version of the app at:
 
-In your terminal, run the following:
+👉 [mattersim.streamlit.app](mattersim.streamlit.app)
+
+Alternatively, to run the app locally, use the following command in your terminal:
    ```bash
    streamlit run app.py
    ```
