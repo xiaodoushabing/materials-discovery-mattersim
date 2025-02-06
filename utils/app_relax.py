@@ -38,8 +38,6 @@ def setup_relaxation_sidebar():
         st.session_state.fmax = 0.01
     if "pressure" not in st.session_state:
         st.session_state.pressure= 0.0
-    if "unit" not in st.session_state:
-        st.session_state.unit = "GPa"
 
     col1, col2 = st.sidebar.columns(2)
     with col1:
@@ -55,7 +53,7 @@ def setup_relaxation_sidebar():
     with col2:
         unit = st.pills("Unit",
                         ["GPa", "eV/A^3"],
-                        default=st.session_state.unit,
+                        default="GPa",
                         key="unit")
 
     if unit == "GPa":
@@ -163,7 +161,7 @@ def perform_relaxation(basis_positions, structure,
                 st.success(f"""
                             **Relaxation completed with:**  \n
                             **Optimizer:** {optimizer}\n
-                            **Filter:** {filter}\n
+                            **Filter:** {filtering}\n
                             **Maximum force:** {fmax}\n
                             **Symmetry constrained:** {constrain_symmetry}\n
                             **Relaxation steps:** {steps}\n
