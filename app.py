@@ -96,8 +96,8 @@ def main():
                            constrain_symmetry,
                            fmax,
                            pressure)
-
-        # Display results
+    # Check if a relaxed structure exists in session state
+    if "relaxed_structure" in st.session_state:
         st.header("Structure Relaxation Results")
         display_results(structure, atoms)
         render_structure(structure, repeat_unit=repeat_unit)
@@ -115,6 +115,7 @@ def main():
         if (temp_unit == "K" and temperature <= absolute_zero[temp_unit]):
             st.warning("Temperature cannot be exactly at or below absolute zero.", icon = "⚠️")
             st.stop()
+
         with st.spinner("Running MD simulation..."):
             md = run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit)
             # Display results
