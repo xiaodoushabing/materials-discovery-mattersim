@@ -11,7 +11,7 @@
 - While the MatterSim authors recommend `Python 3.9`, this project is optimized for `Python 3.12.x`.
 
 #### Install from PyPI
-To run MatterSim, the authors recinnebd creating a clean conda environment to avoid potential package conflicts. You can create and activate a conda environment with the following commands:
+To run MatterSim, the authors recommended creating a clean conda environment to avoid potential package conflicts. You can create and activate a conda environment with the following commands:
    ```bash
    # create the environment
    conda create -n mattersim python=3.12
