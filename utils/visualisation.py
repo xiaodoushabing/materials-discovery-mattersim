@@ -1,15 +1,34 @@
+"""
+This module provides functions for visualizing atomic structures and plotting energy distributions.
+
+It includes functions for:
+
+- Rendering interactive 3D visualizations of atomic structures using py3Dmol.
+- Plotting the distribution of energies before and after structure relaxation.
+- Plotting the distribution of total energy, forces, and stresses from MD predictions.
+"""
+
 # %% import necessary libraries
+import sys
+import os
 import seaborn as sns
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
-import os
 import py3Dmol
 from ase.io import write
-import sys
-import streamlit as st
 
 # %% Define function to visualise data distribution from Potential inference
 def plot_potential(predictions, title = None):
+    """Plots the distribution of total energy, forces, and stresses from MD predictions.
+
+    Args:
+        predictions (tuple): A tuple containing three lists:
+            - predictions[0]: A list of total energies.
+            - predictions[1]: A list of forces (each element is a list of 3 force components).
+            - predictions[2]: A list of stresses (each element is a list of 3 stress components).
+        title (str, optional): The title for the entire plot. Defaults to None.
+    """
+
     fig = plt.figure(figsize=(15, 12))
     gs = gridspec.GridSpec(3, 3, figure=fig, height_ratios=[1, 1, 1], hspace=0.4, wspace=0.3)
 
@@ -49,7 +68,7 @@ def plot_potential(predictions, title = None):
                 sns.histplot([stresses[0][0] for stresses in predictions[2]],
                             ax=ax,
                             kde=True,
-                            color='blue') 
+                            color='blue')
                 ax.set_xlabel("(x-x)")
                 for axs in ax.get_xticklabels():
                     axs.set_rotation(45)
@@ -57,70 +76,133 @@ def plot_potential(predictions, title = None):
                 sns.histplot([stresses[0][1] for stresses in predictions[2]],
                             ax=ax,
                             kde=True,
-                            color='green') 
+                            color='green')
                 ax.set_xlabel("(x-y)")
             if c == 2:
                 sns.histplot([stresses[0][2] for stresses in predictions[2]],
                             ax=ax,
                             kde=True,
-                            color='red') 
+                            color='red')
                 ax.set_xlabel("(x-z)")
             ax.set_title("Stress (GPa)")
-    
+
     if title:
         fig.suptitle(title, fontsize=16)
     plt.show()
 
 ## %% Define function to visualise relaxation
 def plot_relaxation(relaxation_trajectories, split = False):
+    """Plots the distribution of energies before and after structure relaxation.
 
+    Args:
+        relaxation_trajectories (dict): A dictionary where keys are identifiers
+            (e.g., molecule names) and values are lists of `ase.Atoms` objects
+            representing the relaxation trajectory for that structure.
+            Each `ase.Atoms` object in the trajectory should have a 
+            `total_energy` stored in its `info` dictionary.
+        split (bool, optional): If True, creates two separate plots for
+                                    initial and relaxed energies.
+                                If False (default), creates a single plot
+                                    with both distributions overlaid.
+
+    Raises:
+        KeyError: If any of the `ase.Atoms` objects in the trajectories do not have a 
+            `total_energy` entry in their `info` dictionary.
+
+    """
      # # Extract the relaxed structures and corresponding energies
-     relaxed_energies = [traj[-1].info['total_energy'] for traj in relaxation_trajectories.values()]
+    relaxed_energies = [traj[-1].info['total_energy'] for traj in relaxation_trajectories.values()]
      # relaxed_structures = [traj[-1] for traj in relaxation_trajectories.values()]
      # relaxed_energies = [structure.info['total_energy'] for structure in relaxed_structures]
 
      # # Do the same with the initial structures and energies
-     initial_energies = [traj[0].info['total_energy'] for traj in relaxation_trajectories.values()]     
+    initial_energies = [traj[0].info['total_energy'] for traj in relaxation_trajectories.values()]
      # initial_structures = [traj[0] for traj in relaxation_trajectories.values()]
      # initial_energies = [structure.info['total_energy'] for structure in initial_structures]
 
      # verify by inspection that total energy has decreased in all instances
      # for initial_energy, relaxed_energy in zip(initial_energies, relaxed_energies):
      #     print(f"Initial energy: {initial_energy} eV, relaxed energy: {relaxed_energy} eV")
-     if split:
-          fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
-          sns.histplot(initial_energies, kde=True, ax=axs[0], color="red", edgecolor = None, label = "Initial Energy", bins = 50)
-          axs[0].set_title("Initial Energies")
-          axs[0].set_xlabel("Energy (eV)")
-          axs[0].legend()
-          
-          sns.histplot(relaxed_energies, kde = True, ax = axs[1], color = "darkgreen", edgecolor = None, label = 'Relaxed Energy', bins =50)
-          axs[1].set_title("Relaxed Energies")
-          axs[1].set_xlabel("Energy (eV)")
-          axs[1].legend()
-          
-          fig.suptitle("Comparison of Energies Before and After Relaxation", fontsize=16)
-          plt.tight_layout()
-          plt.show()
-     else:
-          fig, ax = plt.subplots(figsize = (10,5))
-          sns.histplot(initial_energies, kde=True, ax=ax, color="red", edgecolor = None, label = "Initial Energy", bins = 50)
-          sns.histplot(relaxed_energies, kde = True, ax = ax, color = "darkgreen", edgecolor = 'darkgreen', fill=True, label = 'Relaxed Energy', bins =50)
-          ax.set_title("Comparison of energies before and after relaxation")
-          ax.set_xlabel("Energy (eV)")
-          ax.legend()
-          plt.tight_layout()
-          plt.show()
+    if split:
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
+        sns.histplot(initial_energies,
+                     kde=True,
+                     ax=axs[0],
+                     color="red",
+                     edgecolor = None,
+                     label = "Initial Energy",
+                     bins = 50)
+        axs[0].set_title("Initial Energies")
+        axs[0].set_xlabel("Energy (eV)")
+        axs[0].legend()
+
+        sns.histplot(relaxed_energies,
+                     kde = True,
+                     ax = axs[1],
+                     color = "darkgreen",
+                     edgecolor = None,
+                     label = 'Relaxed Energy',
+                     bins =50)
+        axs[1].set_title("Relaxed Energies")
+        axs[1].set_xlabel("Energy (eV)")
+        axs[1].legend()
+
+        fig.suptitle("Comparison of Energies Before and After Relaxation", fontsize=16)
+        plt.tight_layout()
+        plt.show()
+    else:
+        fig, ax = plt.subplots(figsize = (10,5))
+        sns.histplot(initial_energies,
+                     kde=True,
+                     ax=ax,
+                     color="red",
+                     edgecolor = None,
+                     label = "Initial Energy",
+                     bins = 50)
+        sns.histplot(relaxed_energies,
+                     kde = True,
+                     ax = ax,
+                     color = "darkgreen",
+                     edgecolor = 'darkgreen',
+                     fill=True,
+                     label = 'Relaxed Energy',
+                     bins =50)
+        ax.set_title("Comparison of energies before and after relaxation")
+        ax.set_xlabel("Energy (eV)")
+        ax.legend()
+        plt.tight_layout()
+        plt.show()
 
 # %% visualise structure
-def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=False, width=800, height=600):
+def visualise_structure(structure, preview=True, repeat_unit=3, store_xyz=False, width=800, height=600):
+    """Renders an interactive 3D visualization of an atomic structure using py3Dmol.
 
-    ## Extract the unit cell vectors e.g., Cell([3.85, 3.85, 3.72])
+    Args:
+        structure (ase.Atoms): The atomic structure to visualize. Must be an ASE Atoms object.
+        preview (bool, optional): If True, prints the atomic positions to the console.
+            Defaults to True.
+        repeat_unit (int, optional): The number of times to repeat the unit cell in each direction 
+            to create a supercell. Defaults to 3.
+        store_xyz (bool, optional): If True, keeps the temporary XYZ file.
+                                    If False (default), deletes it.
+        width (int, optional): The width of the viewer in pixels. Defaults to 800.
+        height (int, optional): The height of the viewer in pixels. Defaults to 600.
+
+    Returns:
+        str or None: If running in Streamlit environment, returns HTML representation of the viewer.
+                     Otherwise, returns None.
+
+    Raises:
+        TypeError: If `structure` is not an ase.Atoms object.
+        ValueError: If `repeat_unit` is not a positive integer.
+
+    """
+    ## Extract unit cell vectors e.g., Cell([3.85, 3.85, 3.72])
     unit_cell = structure.get_cell()
 
     if preview:
         print(f"Structure positions: {structure.positions}")
-    
+
     # Define the corners of a single unit cell
     corners = [
         [0, 0, 0],  # Origin
@@ -148,7 +230,8 @@ def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=Fal
     write("./supercell.xyz", supercell)
 
     # Read the XYZ file for atom positions
-    xyz = open("./supercell.xyz", "r").read()
+    with open("./supercell.xyz", "r") as f:
+        xyz = f.read()
 
     ## Initialize Py3Dmol viewer
     viewer = py3Dmol.view(width=width, height=height)
@@ -177,7 +260,6 @@ def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=Fal
             "color": "black"
         })
 
-        
     # Add bounding boxes for the supercell by translating the unit cell edges
     for nx in range(repeat_unit):  # Adjust repetitions as per the supercell size
         for ny in range(repeat_unit):
@@ -200,7 +282,7 @@ def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=Fal
         {"start": origin, "end": unit_cell[2]+origin, "color": "blue", "label": "c"}
     ]
 
-    for axis in axes:        
+    for axis in axes:
         # Arrowhead slightly outside the unit cell
         arrow_start = axis["start"]
         arrow_end = axis["end"]
@@ -210,13 +292,18 @@ def visualise_structure(structure, preview = True, repeat_unit =3, store_xyz=Fal
 
         # Move labels even further outside
         text_pos = axis["end"] * 1.01  # Move text beyond arrow tip
-        viewer.addLabel(axis["label"], {"position": {"x": text_pos[0], "y": text_pos[1], "z": text_pos[2]},
-                                        "fontSize": 17, "backgroundColor": "white",
-                                        "fontColor": axis["color"]})
-        
+        viewer.addLabel(axis["label"],
+                        {"position":
+                            {"x": text_pos[0], "y": text_pos[1], "z": text_pos[2]},
+                        "fontSize": 17,
+                        "backgroundColor": "white",
+                        "fontColor": axis["color"]
+                        })
+
     # Zoom to the structure and display
     viewer.zoomTo()
     viewer.show()
 
     if "streamlit" in sys.modules:
         return viewer._make_html()
+    return None

@@ -1,8 +1,25 @@
+"""Provides functions for setting up and running molecular dynamics simulations using Mattersim."""
+
 import streamlit as st
 from mattersim.applications.moldyn import MolecularDynamics
 
 # %%
 def get_md():
+    """Gets molecular dynamics simulation parameters from the user using Streamlit widgets.
+
+    This function initializes and updates the simulation parameters stored in `st.session_state`.
+    It uses Streamlit widgets to allow the user to set the ensemble, temperature, time step,
+    thermostat timescale (taut), number of steps, and temperature unit.
+
+    Returns:
+        tuple: A tuple containing the following simulation parameters:
+            - ensemble (str): The simulation ensemble.
+            - temperature (float): The simulation temperature.
+            - timestep (float): The simulation time step (fs).
+            - taut (float): The timescale of the thermostat (fs).
+            - n_steps (int): The number of simulation steps.
+            - temp_unit (str): The temperature unit ("K" or "deg").
+    """
     # Initialize session state variables if not present
     if "ensemble" not in st.session_state:
         st.session_state.ensemble = "NVT_NOSE_HOOVER"
@@ -47,7 +64,7 @@ def get_md():
     st.session_state.taut = st.number_input(
         "Timescale of thermostat (fs)",
         value=st.session_state.taut if st.session_state.taut is not None else 1000 * st.session_state.timestep,
-        placeholder="If left empty, taut will be automatically set to 1000 * timestep.",
+        placeholder="If left empty, taut will be automatically set to 1000*timestep.",
         help="Characteristic timescale of the thermostat, in fs."
     )
 
@@ -69,6 +86,23 @@ def get_md():
 
 # %%
 def run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit):
+    """Runs a molecular dynamics simulation using the specified parameters.
+
+    Args:
+        structure (ase.Atoms): The atomic structure to simulate.
+        ensemble (str): The simulation ensemble.
+        temperature (float): The simulation temperature.
+        timestep (float): The simulation time step (fs).
+        taut (float): The timescale of the thermostat (fs).
+        n_steps (int): The number of simulation steps.
+        temp_unit (str): The temperature unit ("K" or "deg").
+
+    Returns:
+        mattersim.applications.moldyn.MolecularDynamics or 
+        None: The MolecularDynamics object if the simulation completes
+                successfully, otherwise None. The Streamlit app is stopped
+                if an exception occurs.
+    """
     if temp_unit == "deg":
         temperature += 273.15
     try:
@@ -89,9 +123,9 @@ def run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit)
         **Taut:** {taut}
         """
         , icon="✅")
-            
+
         return md
-    
+
     except Exception as e:
         st.error(f"Relaxation failed: {str(e)}", icon="🚨")
         st.stop()
