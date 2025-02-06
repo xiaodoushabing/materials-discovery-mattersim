@@ -6,11 +6,13 @@ Streamlit for interactive input and display.
 """
 
 import streamlit as st
+
 import utils.app_setup_structure as setup
+from utils.app_md import get_md, run_md
 from utils.app_relax import perform_relaxation, setup_relaxation_sidebar
 from utils.app_results import display_results, render_structure
 from utils.app_sidebar import setup_configuration_sidebar
-from utils.app_md import get_md, run_md
+
 
 # %%
 def main():
@@ -30,11 +32,9 @@ def main():
     # Get model configuration
     model, device = setup_configuration_sidebar()
     st.sidebar.divider()
-    (
-        optimizer, steps, filtering,
-        constrain_symmetry, fmax,
-        pressure, unit
-    ) = setup_relaxation_sidebar()
+    (optimizer, steps, filtering, constrain_symmetry, fmax, pressure, unit) = (
+        setup_relaxation_sidebar()
+    )
 
     builder = setup.get_builder()
 
@@ -42,8 +42,7 @@ def main():
     atoms = setup.get_atomic_input()
     lattice_params = setup.get_lattice_parameters(builder)
     if builder == "Atoms Builder":
-        pbc = st.checkbox("Periodic boundary condition",
-                          value = True)
+        pbc = st.checkbox("Periodic boundary condition", value=True)
     basis_positions = setup.get_basis_positions(atoms, builder)
     if builder == "Crystal Builder":
         spacegroup = setup.get_spacegroup()
@@ -51,27 +50,20 @@ def main():
     rattle, stdev = setup.get_rattle()
 
     st.subheader("Lattice Visualisation")
-    repeat_unit = st.number_input("Number of cells to display per axis",
-                                  min_value=1,
-                                  max_value=10,
-                                  value=3)
+    repeat_unit = st.number_input(
+        "Number of cells to display per axis", min_value=1, max_value=10, value=3
+    )
 
     # Build structure
     st.divider()
     if builder == "Crystal Builder":
-        structure = setup.create_crystal(atoms,
-                                   basis_positions,
-                                   lattice_params,
-                                   spacegroup,
-                                   rattle,
-                                   stdev)
+        structure = setup.create_crystal(
+            atoms, basis_positions, lattice_params, spacegroup, rattle, stdev
+        )
     else:
-        structure = setup.create_atom(atoms,
-                                basis_positions,
-                                lattice_params,
-                                rattle,
-                                pbc,
-                                stdev)
+        structure = setup.create_atom(
+            atoms, basis_positions, lattice_params, rattle, pbc, stdev
+        )
 
     setup.setup_calculator(structure, model, device)
 
@@ -83,24 +75,28 @@ def main():
     st.divider()
     if st.button("Relax Structure"):
         if unit == "eV/A^3" and pressure >= 1:
-            st.warning(f"""
+            st.warning(
+                f"""
                        Check input pressure: {pressure} {unit}. \n
                        1 eV/A^3 is already 160 GPa.""",
-                        icon = "⚠️")
+                icon="⚠️",
+            )
 
-        perform_relaxation(basis_positions,
-                           structure,
-                           optimizer,
-                           steps,
-                           filtering,
-                           constrain_symmetry,
-                           fmax,
-                           pressure)
+        perform_relaxation(
+            basis_positions,
+            structure,
+            optimizer,
+            steps,
+            filtering,
+            constrain_symmetry,
+            fmax,
+            pressure,
+        )
     # Check if a relaxed structure exists in session state
     if "relaxed_structure" in st.session_state:
         st.header("Structure Relaxation Results")
-        display_results(structure, atoms)
-        render_structure(structure, repeat_unit=repeat_unit)
+        display_results(st.session_state.relaxed_structure, atoms)
+        render_structure(st.session_state.relaxed_structure, repeat_unit=repeat_unit)
 
     # MD simulation
     st.divider()
@@ -112,16 +108,21 @@ def main():
     ensemble, temperature, timestep, taut, n_steps, temp_unit = get_md()
     absolute_zero = {"K": 0, "deg": -273.15}
     if st.button("Start MD simulation"):
-        if (temp_unit == "K" and temperature <= absolute_zero[temp_unit]):
-            st.warning("Temperature cannot be exactly at or below absolute zero.", icon = "⚠️")
+        if temp_unit == "K" and temperature <= absolute_zero[temp_unit]:
+            st.warning(
+                "Temperature cannot be exactly at or below absolute zero.", icon="⚠️"
+            )
             st.stop()
 
         with st.spinner("Running MD simulation..."):
-            md = run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit)
+            md = run_md(
+                structure, ensemble, temperature, timestep, taut, n_steps, temp_unit
+            )
             # Display results
             st.header("MD Simulation Results")
             display_results(md.atoms, atoms)
             render_structure(md.atoms, repeat_unit=repeat_unit)
+
 
 if __name__ == "__main__":
     main()
