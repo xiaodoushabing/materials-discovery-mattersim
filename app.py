@@ -8,7 +8,7 @@ Streamlit for interactive input and display.
 import streamlit as st
 
 import utils.app_setup_structure as setup
-from utils.app_md import get_md, run_md
+from utils.app_md import get_md, run_md, conv_tri
 from utils.app_relax import perform_relaxation, setup_relaxation_sidebar
 from utils.app_results import display_results, render_structure
 from utils.app_sidebar import setup_configuration_sidebar
@@ -28,6 +28,7 @@ def main():
     - Running molecular dynamics simulations (if requested) and displaying the results.
     """
     st.title("Structure Analysis with MatterSim")
+
 
     # Get model configuration
     model, device = setup_configuration_sidebar()
@@ -56,21 +57,23 @@ def main():
 
     # Build structure
     st.divider()
+
+    if "structure" not in st.session_state or st.session_state.structure is None:
+        st.session_state.structure = None
     if builder == "Crystal Builder":
-        structure = setup.create_crystal(
+        st.session_state.structure = setup.create_crystal(
             atoms, basis_positions, lattice_params, spacegroup, rattle, stdev
         )
     else:
-        structure = setup.create_atom(
+        st.session_state.structure = setup.create_atom(
             atoms, basis_positions, lattice_params, rattle, pbc, stdev
         )
-
-    setup.setup_calculator(structure, model, device)
-
-    st.header("Initial Structure")
-    display_results(structure, atoms)
-    render_structure(structure, repeat_unit=repeat_unit)
-
+    if st.session_state.structure is not None:
+        setup.setup_calculator(st.session_state.structure, model, device)
+        st.header("Initial Structure")
+        display_results(st.session_state.structure, atoms)
+        render_structure(st.session_state.structure, repeat_unit=repeat_unit)
+            
     # Relax structure when requested
     st.divider()
     if st.button("Relax Structure"):
@@ -84,7 +87,7 @@ def main():
 
         perform_relaxation(
             basis_positions,
-            structure,
+            st.session_state.structure,
             optimizer,
             steps,
             filtering,
@@ -115,14 +118,14 @@ def main():
             st.stop()
 
         with st.spinner("Running MD simulation..."):
+            conv_tri(st.session_state.relaxed_structure)
             md = run_md(
-                structure, ensemble, temperature, timestep, taut, n_steps, temp_unit
+                st.session_state.relaxed_structure, ensemble, temperature, timestep, taut, n_steps, temp_unit
             )
             # Display results
             st.header("MD Simulation Results")
             display_results(md.atoms, atoms)
             render_structure(md.atoms, repeat_unit=repeat_unit)
-
 
 if __name__ == "__main__":
     main()
