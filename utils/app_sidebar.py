@@ -16,17 +16,24 @@ def setup_configuration_sidebar():
                The model size will be either "1M" or "5M". The device will be
                either "cuda" or "cpu".
     """
+    if "model" not in st.session_state:
+        st.session_state.model = "1M"  # Default model
+     # Default device
+
     st.sidebar.header("Model and device configuration")
     model = st.sidebar.pills(
         "Select MatterSim Model",
         ["1M", "5M"],
-        default = "1M"
+        key="model"
     )
     # Check CUDA availability
     if torch.cuda.is_available():
+        if "device" not in st.session_state:
+            st.session_state.device = "cuda"
         device = st.sidebar.radio(
             "Select Device", 
-            ["cuda", "cpu"]
+            ["cuda", "cpu"],
+            key="device"
             )
         if device == "cuda":
             st.sidebar.info(f"Using GPU: {torch.cuda.get_device_name(0)}", icon="ℹ️")
@@ -34,7 +41,10 @@ def setup_configuration_sidebar():
         else:
             st.sidebar.warning("Cuda is available but using CPU instead.", icon="⚠️")
     else:
+        if "device" not in st.session_state:
+            st.session_state.device = "cpu"
         device = "cpu"
         st.sidebar.warning("Cuda unavailable. Using CPU.", icon="⚠️")
+
 
     return model[0], device

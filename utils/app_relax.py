@@ -2,6 +2,7 @@
 
 import streamlit as st
 from ase.units import GPa
+from ase import Atoms
 from mattersim.applications.relax import Relaxer
 
 
@@ -39,11 +40,13 @@ def setup_relaxation_sidebar():
         st.session_state.fmax = 0.01
     if "pressure" not in st.session_state:
         st.session_state.pressure = 0.0
+    if "unit" not in st.session_state:
+        st.session_state.unit="GPa"
 
     col1, col2 = st.sidebar.columns(2)
     with col1:
         pressure = st.number_input(
-            "Pressure", value=st.session_state.pressure, min_value=0.0
+            "Pressure", value=st.session_state.pressure, min_value=0.0, key="pressure"
         )
         """"
         The scalar_pressure used in ExpCellFilter assumes eV/A^3 unit
@@ -52,7 +55,12 @@ def setup_relaxation_sidebar():
               160.21766208 (or multiply by GPa from ase.units)."
         """
     with col2:
-        unit = st.pills("Unit", ["GPa", "eV/A^3"], default="GPa", key="unit")
+        unit = st.pills("Unit",
+                        ["GPa", "eV/A^3"],
+                        selection_mode="single",
+                        default=st.session_state.unit,
+                        key="unit"
+        )
 
     if unit == "GPa":
         pressure *= GPa
@@ -71,10 +79,10 @@ def setup_relaxation_sidebar():
 
     steps = st.sidebar.slider(
         "Maximum Relaxation Steps",
-        value=st.session_state.steps,
         min_value=0,
         max_value=5000,
         step=500,
+        value=st.session_state.steps,
         key="steps",
     )
 
@@ -100,15 +108,14 @@ def setup_relaxation_sidebar():
 
     fmax = st.sidebar.number_input(
         "fmax",
-        value=st.session_state.fmax,
-        key="fmax",
         min_value=0.01,
         step=0.01,
         help="The maximum force allowed.",
+        value=st.session_state.fmax,
+        key="fmax"
     )
 
     return optimizer, steps, filtering, constrain_symmetry, fmax, pressure, unit
-
 
 # %%
 def perform_relaxation(
@@ -156,6 +163,7 @@ def perform_relaxation(
             st.error(f"Failed to initialize relaxer: {str(e)}", icon="🚨")
             st.stop()
 
+
         # Perform relaxation
         try:
             result = relaxer.relax(
@@ -173,22 +181,19 @@ def perform_relaxation(
                         "Relaxation failed: Optimizer returned failure flag", icon="🚨"
                     )
                     st.stop()
-                relaxed_structure = result[1]  # Get the Atoms object from the tuple
-            else:
+                relaxed_structure = result[1]
+            elif isinstance(result, Atoms):
                 relaxed_structure = result
+            else:  # Handle unexpected return types
+                st.error(f"Relaxation failed: Unexpected return type from relaxer: {type(result)}", icon="🚨")
+                st.stop()
 
-            # Check if we got a valid structure back
             if relaxed_structure is None:
                 st.error("Relaxation failed: No structure returned", icon="🚨")
                 st.stop()
 
-            # Copy the calculator from the original structure
             relaxed_structure.calc = structure.calc
-
-            # Store the relaxed structure in session_state to persist it across re-runs
-            st.session_state.relaxed_structure = relaxed_structure.copy()
-            # Reattach calculator to the stored structure
-            st.session_state.relaxed_structure.calc = structure.calc
+            st.session_state.relaxed_structure = relaxed_structure
 
             st.success(
                 f"""
@@ -203,8 +208,6 @@ def perform_relaxation(
                 icon="✅",
             )
 
-            return relaxed_structure
-
         except Exception as e:
-            st.error(f"Relaxation failed: {str(e)}", icon="🚨")
+            st.error(f"An error occurred during relaxation: {str(e)}", icon="🚨")
             st.stop()

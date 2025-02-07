@@ -1,6 +1,7 @@
 """Provides functions for setting up and running molecular dynamics simulations using Mattersim."""
 
 import streamlit as st
+import numpy as np
 from mattersim.applications.moldyn import MolecularDynamics
 
 # %%
@@ -83,6 +84,27 @@ def get_md():
         st.session_state.n_steps,
         st.session_state.temp_unit
     )
+
+def conv_tri(structure):
+    """
+    Convert the cell matrix of a structure to an upper triangular form.
+
+    This function ensures that the computational box of the given atomic 
+    structure is an upper triangular matrix, which is required by certain 
+    simulation methods (e.g., ASE's NPT dynamics). It modifies the structure 
+    in place.
+
+    Args:
+        structure (ase.Atoms): The atomic structure whose cell matrix 
+                               needs to be converted.
+
+    Returns:
+        None: The function modifies the structure in place.
+    """
+    cell = structure.get_cell()
+    upper_triangular_cell = np.triu(cell)  # Force upper triangular structure
+    structure.set_cell(upper_triangular_cell, scale_atoms=True)
+    st.info("Converted unit cell to upper triangular matrix form.")
 
 # %%
 def run_md(structure, ensemble, temperature, timestep, taut, n_steps, temp_unit):
