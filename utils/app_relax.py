@@ -46,7 +46,7 @@ def setup_relaxation_sidebar():
     col1, col2 = st.sidebar.columns(2)
     with col1:
         pressure = st.number_input(
-            "Pressure", value=st.session_state.pressure, min_value=0.0, key="pressure"
+            "Pressure", min_value=0.0, key="pressure"
         )
         """"
         The scalar_pressure used in ExpCellFilter assumes eV/A^3 unit
@@ -58,7 +58,6 @@ def setup_relaxation_sidebar():
         unit = st.pills("Unit",
                         ["GPa", "eV/A^3"],
                         selection_mode="single",
-                        default=st.session_state.unit,
                         key="unit"
         )
 
@@ -69,7 +68,6 @@ def setup_relaxation_sidebar():
         "Optimizer",
         ["BFGS", "FIRE"],
         selection_mode="single",
-        default=st.session_state.optimizer,
         key="optimizer",
     )
     st.sidebar.caption("""
@@ -82,14 +80,12 @@ def setup_relaxation_sidebar():
         min_value=0,
         max_value=5000,
         step=500,
-        value=st.session_state.steps,
         key="steps",
     )
 
     filtering = st.sidebar.pills(
         "Filter",
         ["ExpCellFilter", "FrechetCellFilter", "None"],
-        default=st.session_state.filtering,
         key="filtering",
     )
     if filtering == "None":
@@ -102,7 +98,6 @@ def setup_relaxation_sidebar():
 
     constrain_symmetry = st.sidebar.checkbox(
         "Constrain Symmetry",
-        value=st.session_state.constrain_symmetry,
         key="constrain_symmetry",
     )
 
@@ -111,7 +106,6 @@ def setup_relaxation_sidebar():
         min_value=0.01,
         step=0.01,
         help="The maximum force allowed.",
-        value=st.session_state.fmax,
         key="fmax"
     )
 
