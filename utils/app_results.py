@@ -3,6 +3,7 @@
 # %% import necessary libraries
 import streamlit as st
 import streamlit.components.v1 as components
+import time
 
 from utils.visualisation import visualise_structure
 from utils.app_setup_structure import calc_energy
@@ -20,9 +21,10 @@ def display_results(structure, atoms):
     """
     # Display relaxation results if available
     if structure is not None:
+        start = time.time()
         calc_energy(structure, atoms)
         # st.info(f"Energy Change: {relaxed_energy - initial_energy:.4f} GPa")
-
+        st.write(f"Time taken for calculation: {time.time()-start:.5f} s")
         # Display relaxed parameters
         cell_params = structure.cell.cellpar()
 
