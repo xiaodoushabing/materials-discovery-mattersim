@@ -6,6 +6,7 @@ Streamlit for interactive input and display.
 """
 
 import streamlit as st
+import time
 
 import utils.app_setup_structure as setup
 from utils.app_md import get_md, run_md, conv_tri
@@ -84,7 +85,7 @@ def main():
                        1 eV/A^3 is already 160 GPa.""",
                 icon="⚠️",
             )
-
+        start = time.time()
         perform_relaxation(
             basis_positions,
             st.session_state.structure,
@@ -95,6 +96,7 @@ def main():
             fmax,
             pressure,
         )
+        st.write(f"time taken for relaxation: {time.time()-start} s")
     # Check if a relaxed structure exists in session state
     if "relaxed_structure" in st.session_state:
         st.header("Structure Relaxation Results")
@@ -118,10 +120,12 @@ def main():
             st.stop()
 
         with st.spinner("Running MD simulation..."):
+            start = time.time()
             conv_tri(st.session_state.relaxed_structure)
             md = run_md(
                 st.session_state.relaxed_structure, ensemble, temperature, timestep, taut, n_steps, temp_unit
             )
+            st.write(f"Time taken for MD simulation: {time.time()-start:.5f} s")
             # Display results
             st.header("MD Simulation Results")
             display_results(md.atoms, atoms)
