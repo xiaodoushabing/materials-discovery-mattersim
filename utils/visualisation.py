@@ -174,7 +174,7 @@ def plot_relaxation(relaxation_trajectories, split = False):
         plt.show()
 
 # %% visualise structure
-def visualise_structure(structure, preview=True, repeat_unit=3, store_xyz=False, width=800, height=600):
+def visualise_structure(input_file, structure=None, preview=True, repeat_unit=3, store_xyz=False, width=800, height=600):
     """Renders an interactive 3D visualization of an atomic structure using py3Dmol.
 
     Args:
@@ -197,6 +197,8 @@ def visualise_structure(structure, preview=True, repeat_unit=3, store_xyz=False,
         ValueError: If `repeat_unit` is not a positive integer.
 
     """
+    if structure is None:
+        structure = io.read(input_file)
     ## Extract unit cell vectors e.g., Cell([3.85, 3.85, 3.72])
     unit_cell = structure.get_cell()
 
@@ -243,13 +245,24 @@ def visualise_structure(structure, preview=True, repeat_unit=3, store_xyz=False,
         os.remove("./supercell.xyz")
 
     # Get the atomic masses for scaling
-    atomic_masses = structure.get_masses()
+    atomic_masses = supercell.get_masses()
     max_mass = max(atomic_masses)
 
-    # Apply individual sphere size scaling for each atom based on atomic mass
-    for atom_index, mass in enumerate(atomic_masses):
-        sphere_scale = (mass / max_mass) * 0.5
-        viewer.setStyle({"model": atom_index, "sphere": {"scale": sphere_scale}})
+    # Extract unique elements and assign colors
+    unique_elements = sorted(set(supercell.get_chemical_symbols()))
+    cmap = plt.cm.get_cmap("tab10", len(unique_elements))
+    element_colors = {
+        element: "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))  # Convert RGB to HEX
+        for element, (r, g, b, _) in zip(unique_elements, cmap(np.linspace(0, 1, len(unique_elements))))
+    }
+
+    # Apply Colors to Each Atom and size scaling based on atomic mass
+    for atom_index, atom in enumerate(supercell):
+        sphere_scale = (atom.mass / max_mass) * 0.5
+        color = element_colors[atom.symbol]  # Ensure consistent coloring by element symbol
+        viewer.setStyle({"serial": atom_index}, {"sphere": {"scale": sphere_scale,
+                                                            "color": color,
+                                                              }})
 
     for edge in edges:
         start = corners[edge[0]]
@@ -299,6 +312,39 @@ def visualise_structure(structure, preview=True, repeat_unit=3, store_xyz=False,
                         "backgroundColor": "white",
                         "fontColor": axis["color"]
                         })
+
+    # Define legend starting position and offsets
+    legend_start = np.array([-15, -5, 0])  # Start position for the legend
+    legend_offset = np.array([0, 5, 0])   # Offset for spacing out labels
+    max_mass = max(atomic_masses)
+
+    # Dynamically scale font size based on the number of elements
+    font_size = max(12, 18 - len(unique_elements))  
+
+    for i, (element, color) in enumerate(element_colors.items()):
+        legend_pos = (legend_start + i * legend_offset).tolist()
+
+        # Determine sphere size based on atomic mass
+        sphere_scale = (supercell[supercell.get_chemical_symbols().index(element)].mass / max_mass) * 0.5
+
+        # Add sphere representing the element
+        viewer.addSphere({
+            "center": {"x": legend_pos[0] - 1, "y": legend_pos[1], "z": legend_pos[2]},  # Offset to the left of the label
+            "radius": 1,
+            "color": color
+        })
+
+        # Add legend label
+        viewer.addLabel(
+            element,
+            {
+                "position": {"x": legend_pos[0], "y": legend_pos[1], "z": legend_pos[2]},
+                "fontSize": font_size,
+                "backgroundColor": "white",
+                "fontColor": color
+            }
+        )
+
 
     # Zoom to the structure and display
     viewer.zoomTo()
