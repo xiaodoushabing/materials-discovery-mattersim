@@ -16,6 +16,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import py3Dmol
 from ase.io import write
+from ase import io
+import numpy as np
 
 # %% Define function to visualise data distribution from Potential inference
 def plot_potential(predictions, title = None):
@@ -91,90 +93,7 @@ def plot_potential(predictions, title = None):
     plt.show()
 
 ## %% Define function to visualise relaxation
-def plot_relaxation(relaxation_trajectories, split = False):
-    """Plots the distribution of energies before and after structure relaxation.
-
-    Args:
-        relaxation_trajectories (dict): A dictionary where keys are identifiers
-            (e.g., molecule names) and values are lists of `ase.Atoms` objects
-            representing the relaxation trajectory for that structure.
-            Each `ase.Atoms` object in the trajectory should have a 
-            `total_energy` stored in its `info` dictionary.
-        split (bool, optional): If True, creates two separate plots for
-                                    initial and relaxed energies.
-                                If False (default), creates a single plot
-                                    with both distributions overlaid.
-
-    Raises:
-        KeyError: If any of the `ase.Atoms` objects in the trajectories do not have a 
-            `total_energy` entry in their `info` dictionary.
-
-    """
-     # # Extract the relaxed structures and corresponding energies
-    relaxed_energies = [traj[-1].info['total_energy'] for traj in relaxation_trajectories.values()]
-     # relaxed_structures = [traj[-1] for traj in relaxation_trajectories.values()]
-     # relaxed_energies = [structure.info['total_energy'] for structure in relaxed_structures]
-
-     # # Do the same with the initial structures and energies
-    initial_energies = [traj[0].info['total_energy'] for traj in relaxation_trajectories.values()]
-     # initial_structures = [traj[0] for traj in relaxation_trajectories.values()]
-     # initial_energies = [structure.info['total_energy'] for structure in initial_structures]
-
-     # verify by inspection that total energy has decreased in all instances
-     # for initial_energy, relaxed_energy in zip(initial_energies, relaxed_energies):
-     #     print(f"Initial energy: {initial_energy} eV, relaxed energy: {relaxed_energy} eV")
-    if split:
-        fig, axs = plt.subplots(1, 2, figsize=(10, 5), sharey=True)
-        sns.histplot(initial_energies,
-                     kde=True,
-                     ax=axs[0],
-                     color="red",
-                     edgecolor = None,
-                     label = "Initial Energy",
-                     bins = 50)
-        axs[0].set_title("Initial Energies")
-        axs[0].set_xlabel("Energy (eV)")
-        axs[0].legend()
-
-        sns.histplot(relaxed_energies,
-                     kde = True,
-                     ax = axs[1],
-                     color = "darkgreen",
-                     edgecolor = None,
-                     label = 'Relaxed Energy',
-                     bins =50)
-        axs[1].set_title("Relaxed Energies")
-        axs[1].set_xlabel("Energy (eV)")
-        axs[1].legend()
-
-        fig.suptitle("Comparison of Energies Before and After Relaxation", fontsize=16)
-        plt.tight_layout()
-        plt.show()
-    else:
-        fig, ax = plt.subplots(figsize = (10,5))
-        sns.histplot(initial_energies,
-                     kde=True,
-                     ax=ax,
-                     color="red",
-                     edgecolor = None,
-                     label = "Initial Energy",
-                     bins = 50)
-        sns.histplot(relaxed_energies,
-                     kde = True,
-                     ax = ax,
-                     color = "darkgreen",
-                     edgecolor = 'darkgreen',
-                     fill=True,
-                     label = 'Relaxed Energy',
-                     bins =50)
-        ax.set_title("Comparison of energies before and after relaxation")
-        ax.set_xlabel("Energy (eV)")
-        ax.legend()
-        plt.tight_layout()
-        plt.show()
-
-# %% visualise structure
-def visualise_structure(input_file, structure=None, preview=True, repeat_unit=3, store_xyz=False, width=800, height=600):
+def visualise_structure(structure, input_file=None, preview=True, repeat_unit=3, store_xyz=True, width=800, height=600):
     """Renders an interactive 3D visualization of an atomic structure using py3Dmol.
 
     Args:
@@ -197,7 +116,7 @@ def visualise_structure(input_file, structure=None, preview=True, repeat_unit=3,
         ValueError: If `repeat_unit` is not a positive integer.
 
     """
-    if structure is None:
+    if structure is None and input_file:
         structure = io.read(input_file)
     ## Extract unit cell vectors e.g., Cell([3.85, 3.85, 3.72])
     unit_cell = structure.get_cell()
@@ -258,7 +177,10 @@ def visualise_structure(input_file, structure=None, preview=True, repeat_unit=3,
 
     # Apply Colors to Each Atom and size scaling based on atomic mass
     for atom_index, atom in enumerate(supercell):
-        sphere_scale = (atom.mass / max_mass) * 0.5
+        max_scale = 0.5
+        min_scale = 0.2
+        sphere_scale = (atomic_masses[atom_index] / max_mass)**(1/3) * max_scale
+        sphere_scale = max(sphere_scale, min_scale)
         color = element_colors[atom.symbol]  # Ensure consistent coloring by element symbol
         viewer.setStyle({"serial": atom_index}, {"sphere": {"scale": sphere_scale,
                                                             "color": color,
@@ -316,7 +238,6 @@ def visualise_structure(input_file, structure=None, preview=True, repeat_unit=3,
     # Define legend starting position and offsets
     legend_start = np.array([-15, -5, 0])  # Start position for the legend
     legend_offset = np.array([0, 5, 0])   # Offset for spacing out labels
-    max_mass = max(atomic_masses)
 
     # Dynamically scale font size based on the number of elements
     font_size = max(12, 18 - len(unique_elements))  
